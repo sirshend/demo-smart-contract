@@ -329,7 +329,7 @@ contract School {
     event CourseApprovalRejectedC(address indexed student);
     event CourseGradeAssignedC(address indexed student, string grade);
 
-    enum ApplicationStatusC { Pending, Approved, Rejected }
+    enum ApplicationStatusC { Beginning, Pending, Approved, Rejected }
 
 
     struct CourseRequestC {
@@ -342,7 +342,10 @@ contract School {
 
     function requestCourseApprovalC(address teacher) external {
         //require(teacher != address(0), "Invalid teacher address");
-        require(courseRequestsC[msg.sender].status == ApplicationStatusC.Pending, "Application already submitted");
+        require(courseRequestsC[msg.sender].status == ApplicationStatusC.Beginning, "Application has not been used before. So okay to use.");
+        // require(courseRequestsC[msg.sender].status != ApplicationStatusC.Pending, "Application already submitted. Can submit application again");
+        // require(courseRequestsC[msg.sender].status != ApplicationStatusC.Approved, "Application already approved. Can't apply again");
+        // require(courseRequestsC[msg.sender].status != ApplicationStatusC.Rejected, "Application already rejected. Can't apply again");
         courseRequestsC[msg.sender].teacher = teacher;
         courseRequestsC[msg.sender].status = ApplicationStatusC.Pending;
         emit CourseRequestApprovalC(msg.sender, teacher);
@@ -392,7 +395,7 @@ contract School {
     event CourseApprovalRejectedD(address indexed student);
     event CourseGradeAssignedD(address indexed student, string grade);
 
-    enum ApplicationStatusD { Pending, Approved, Rejected }
+    enum ApplicationStatusD { Beginning, Pending, Approved, Rejected }
 
 
     struct CourseRequestD {
@@ -405,7 +408,10 @@ contract School {
 
     function requestCourseApprovalD(address teacher) external {
         //require(teacher != address(0), "Invalid teacher address");
-        require(courseRequestsD[msg.sender].status == ApplicationStatusD.Pending, "Application already submitted");
+        require(courseRequestsD[msg.sender].status == ApplicationStatusD.Beginning, "Application has not been used before. So okay to use.");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Pending, "Application already submitted. Can submit application again");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Approved, "Application already approved. Can't apply again");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Rejected, "Application already rejected. Can't apply again");
         courseRequestsD[msg.sender].teacher = teacher;
         courseRequestsD[msg.sender].status = ApplicationStatusD.Pending;
         emit CourseRequestApprovalD(msg.sender, teacher);
