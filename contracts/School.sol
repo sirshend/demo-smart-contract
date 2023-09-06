@@ -455,55 +455,133 @@ contract School {
     function getCourseRequestStatusD(address student) external view returns (ApplicationStatusD) {
         return courseRequestsD[student].status;
     }
-}
+    event CourseRequestApprovalDD(address indexed student, address teacher);
+    event CourseApprovalReceivedDD(address indexed student);
+    event CourseApprovalRejectedDD(address indexed student);
+    event CourseGradeAssignedDD(address indexed student, string grade);
+
+    enum ApplicationStatusDD { Beginning, Pending, Approved, Rejected }
 
 
-// pragma solidity ^0.8.0;
-
-// contract School {
-//     event RequestApproval(address indexed student, address[] teachers);
-//     event ApprovalReceived(address indexed student);
-
-//     struct Request {
-//         address[] teachers;
-//         mapping(address => bool) approvals;
-//     } 
+    struct CourseRequestDD {
+        address teacher;
+        ApplicationStatusDD status;
+    } 
     
-//     mapping(address => Request) private requests;
+    mapping(address => CourseRequestDD) private courseRequestsDD;
+    mapping(address => string) private studentGradesDD;
 
-//     function requestApproval(address[] calldata teachers) external {
-//         Request storage newRequest = requests[msg.sender];
-//         newRequest.teachers = teachers;
-//         emit RequestApproval(msg.sender, teachers);
-//     }
+    function requestCourseApprovalDD(address teacher) external {
+        //require(teacher != address(0), "Invalid teacher address");
+        require(courseRequestsDD[msg.sender].status == ApplicationStatusDD.Beginning, "Application has not been used before. So okay to use.");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Pending, "Application already submitted. Can submit application again");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Approved, "Application already approved. Can't apply again");
+        // require(courseRequestsD[msg.sender].status != ApplicationStatusD.Rejected, "Application already rejected. Can't apply again");
+        courseRequestsDD[msg.sender].teacher = teacher;
+        courseRequestsDD[msg.sender].status = ApplicationStatusDD.Pending;
+        emit CourseRequestApprovalDD(msg.sender, teacher);
+    }
 
-//     function approveRequest(address student) external {
-//         Request storage request = requests[student];
-//         require(isTeacher(request, msg.sender), "Only requested teacher can approve.");
-//         require(!request.approvals[msg.sender], "Teacher has already approved.");
+    function approveCourseRequestDD(address student) external {
+        CourseRequestDD storage requestDD = courseRequestsDD[student];
+        require(requestDD.teacher == msg.sender, "Only assigned teacher can approve.");
+        require(requestDD.status == ApplicationStatusDD.Pending, "Application already processed.");
 
-//         request.approvals[msg.sender] = true;
+        requestDD.status = ApplicationStatusDD.Approved;
+        emit CourseApprovalReceivedDD(student);
+    }
 
-//         if(isApproved(request)) {
-//             emit ApprovalReceived(student);
-//         }
-//     }
+    function rejectCourseRequestDD(address student) external {
+        CourseRequestDD storage requestDD = courseRequestsDD[student];
+        require(requestDD.teacher == msg.sender, "Only assigned teacher can reject.");
+        require(requestDD.status == ApplicationStatusDD.Pending, "Application already processed.");
 
-//     function isTeacher(Request storage request, address teacher) private view returns(bool) {
-//         for(uint i = 0; i < request.teachers.length; i++) {
-//             if(request.teachers[i] == teacher) {
-//                 return true;
-//             }
-//         }
-//         return false;
-//     }
+        requestDD.status = ApplicationStatusDD.Rejected;
+        emit CourseApprovalRejectedDD(student);
+    }
 
-//     function isApproved(Request storage request) private view returns(bool) {
-//         for(uint i = 0; i < request.teachers.length; i++) {
-//             if(!request.approvals[request.teachers[i]]) {
-//                 return false;
-//             }
-//         }
-//         return true;
-//     }
-// }
+    function assignCourseGradeDD(address student, string calldata grade) external {
+        CourseRequestDD storage requestDD = courseRequestsDD[student];
+        require(requestDD.teacher == msg.sender, "Only assigned teacher can assign grade.");
+        require(requestDD.status == ApplicationStatusDD.Approved, "Student must be approved to assign grade.");
+
+        studentGradesDD[student]= grade;
+        emit CourseGradeAssignedDD(student, grade);
+    }
+
+    function isTeacherDD(address teacher, address student) private view returns(bool) {
+        return courseRequestsDD[student].teacher == teacher;
+    }
+
+    function getStudentGradeDD(address student) external view returns (string memory) {
+        return studentGradesDD[student];
+    }
+
+    function getCourseRequestStatusDD(address student) external view returns (ApplicationStatusDD) {
+        return courseRequestsDD[student].status;
+    }
+
+    event RequestApprovalF(address indexed student, address[] teachers);
+    event ApprovalReceivedF(address indexed student);
+    event CommentAddedF(address indexed student, address indexed teacher, string comment);
+
+    struct RequestF {
+        address[] teachers;
+        mapping(address => string) comments;
+        mapping(address => bool) approvals;
+    } 
+    
+    mapping(address => RequestF) private requestsF;
+
+    function requestApprovalF(address[] calldata teachers) external {
+        RequestF storage newRequestF = requestsF[msg.sender];
+        newRequestF.teachers = teachers;
+        emit RequestApprovalF(msg.sender, teachers);
+    }
+
+    function approveRequestF(address student) external {
+        RequestF storage requestF = requestsF[student];
+        require(isTeacherF(requestF, msg.sender), "Only requested teacher can approve.");
+        require(!requestF.approvals[msg.sender], "Teacher has already approved.");
+
+        requestF.approvals[msg.sender] = true;
+
+        if (isApprovedF(requestF)) {
+            emit ApprovalReceivedF(student);
+        }
+    }
+
+    function addCommentF(address student, string calldata comment) external {
+        RequestF storage requestF = requestsF[student];
+        require(isTeacherF(requestF, msg.sender), "Only assigned teacher can add comments.");
+        require(requestF.approvals[msg.sender], "Teacher has to approve before commenting.");
+        // Allow teachers to rewrite their comments
+        requestF.comments[msg.sender] = comment;
+
+        emit CommentAddedF(student, msg.sender, comment);
+    }
+
+    function getCommentF(address student, address teacher) external view returns (string memory) {
+        return requestsF[student].comments[teacher];
+    }
+
+    function isTeacherF(RequestF storage requestF, address teacher) private view returns(bool) {
+        for (uint i = 0; i < requestF.teachers.length; i++) {
+            if (requestF.teachers[i] == teacher) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isApprovedF(RequestF storage requestF) private view returns(bool) {
+        for (uint i = 0; i < requestF.teachers.length; i++) {
+            if (!requestF.approvals[requestF.teachers[i]]) {
+                return false;
+            }
+        }
+        return true;
+    
+    }
+
+}
